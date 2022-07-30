@@ -1,0 +1,22 @@
+{
+  "name": "Dev::ContainerizedService",
+  "description": "Uses containers to provide services (such as databases) to ease getting a local development environment set up.",
+  "version": "0.1",
+  "perl": "6.*",
+  "authors": [
+    "Jonathan Worthington <jnthn@jnthn.net>"
+  ],
+  "auth": "zef:jnthn",
+  "depends": [],
+  "build-depends": [],
+  "test-depends": [],
+  "provides": {
+    "Dev::ContainerizedService": "lib/Dev/ContainerizedService.rakumod",
+    "Dev::ContainerizedService::Spec": "lib/Dev/ContainerizedService/Spec.rakumod",
+    "Dev::ContainerizedService::Spec::Postgres": "lib/Dev/ContainerizedService/Spec/Postgres.rakumod",
+    "Dev::ContainerizedService::Spec::Redis": "lib/Dev/ContainerizedService/Spec/Redis.rakumod"
+  },
+  "resources": [],
+  "license": "Artistic-2.0",
+  "source-url": "https://github.com/jnthn/raku-dev-containerized-service.git"
+}
