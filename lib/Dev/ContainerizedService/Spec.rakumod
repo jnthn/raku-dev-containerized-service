@@ -49,6 +49,12 @@ role Dev::ContainerizedService::Spec {
     #| connection information).
     method service-data(--> Associative) { ... }
 
+    #| Get an list of tools, which should be provided as type objects of
+    #| classes doing the role Dev::ContainerizedService::Tool.
+    method tools(--> List) {
+        Empty
+    }
+
     #| The first time this is called with a particular key, it generates a
     #| port number, picking one that is currently free. (This is inherently
     #| a bit racy, and some mitigations are done to try and avoid conflicts

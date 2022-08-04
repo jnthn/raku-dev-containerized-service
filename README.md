@@ -86,7 +86,7 @@ saved (in your home directory). These will be reused on subsequent runs.
 
 To clean up this storage, use:
 
-```raku
+```
 ./devenv.raku delete
 ```
 
@@ -97,13 +97,13 @@ Which will remove any created volumes along with saved settings.
 When using storage, it is also possible to see the most recently passed service
 settings for each service by using:
 
-```raku
+```
 ./devenv.raku show
 ```
 
 The output looks like this:
 
-```raku
+```
 postgres
   conninfo: host=localhost port=29249 user=test password=xxlkC2MrOv4yJ3vP1V-pVI7 dbname=test
   dbname: test
@@ -115,6 +115,21 @@ postgres
 
 When used while `run` is active, this is handy for obtaining connection string
 information in order to connect to the database using tools of your choice.
+
+### Tools
+
+Some service specifications also come with a way to run related tools. For
+example, the `postgres` specification can run the `psql` command line client
+(using the version in the container, to be sure of server compatibility),
+injecting the correct credentials. Thus:
+
+```
+./devenv.raku tool postgres client
+```
+
+Is sufficient to launch the client to look at the database. Note that this
+only works when the service is running (so one would run it in one terminal
+window, and then use the tool subcommand in another).
 
 ### Multiple stores
 
@@ -131,28 +146,34 @@ store 'default';
 ```
 
 That is, it specifies the name of a default store. It is possible to have multiple
-independent stores instead, by using the `--store` argument before the `run`
+independent stores, which are crated using the `--store` argument before the `run`
 subcommand:
 
-```raku
+```
 ./devenv.raku --store=bug42 run cro run
 ```
 
 To see the created stores, use:
 
-```raku
+```
 ./devenv.raku stores
 ```
 
 To show the produced service configuration for a particular store, use:
 
-```raku
+```
 ./devenv.raku --store=bug42 show
+```
+
+To use a tool against a particular store, use:
+
+```
+./devenv.raku --store=bug42 tool postgres client
 ```
 
 To delete a particular store, rather than the default one, use:
 
-```raku
+```
 ./devenv.raku --store=bug42 delete
 ```
 
@@ -170,6 +191,12 @@ service 'postgres', :tag<13.0>, :name<pg-products> -> (:$conninfo, *%) {
 service 'postgres', :tag<13.0>, :name<pg-billing> -> (:$conninfo, *%) {
     env 'BILLING_DB_CONN_INFO', $conninfo;
 }
+```
+
+These names are used in the `tool` subcommand:
+
+```
+./devenv.raku -tool pg-billing client
 ```
 
 ### Is this magic?
@@ -202,6 +229,12 @@ service 'postgres', :tag<13.0>, -> (:$host, :$port, :$user, :$password, :$dbname
 ```
 
 Postgres supports storage of the database between runs when `store` is used.
+
+The `client` tool is available, and runs the `psql` client:
+
+```
+./devenv.raku tool postgres client
+```
 
 ### Redis
 

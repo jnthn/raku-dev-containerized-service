@@ -1,5 +1,19 @@
 use v6.d;
 use Dev::ContainerizedService::Spec;
+use Dev::ContainerizedService::Tool;
+
+#| The psql client tool.
+my class ClientTool does Dev::ContainerizedService::Tool {
+    method name(--> Str) { 'client' }
+
+    method run(@extra-args --> Nil) {
+        run 'docker', 'run', '--rm', '-it', '--network', 'host',
+                '-e', "PGPASSWORD=%!service-data<password>", $!image, 'psql',
+                '-h', %!service-data<host>, '-p', %!service-data<port>,
+                '-U', %!service-data<user>, '-d', %!service-data<dbname>,
+                @extra-args
+    }
+}
 
 #| Development service specification for Postgres.
 class Dev::ContainerizedService::Spec::Postgres does Dev::ContainerizedService::Spec {
@@ -62,5 +76,9 @@ class Dev::ContainerizedService::Spec::Postgres does Dev::ContainerizedService::
             :host<localhost>, :$!port, :user<test>, :$!password, :dbname<test>,
             :conninfo("host=localhost port=$!port user=test password=$!password dbname=test")
         }
+    }
+
+    method tools(--> List) {
+        (ClientTool,)
     }
 }

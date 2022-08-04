@@ -1,5 +1,6 @@
 use v6.d;
 use Dev::ContainerizedService::Spec;
+use Dev::ContainerizedService::Tool;
 use JSON::Fast;
 
 # Mapping of service names to the module name to require and (matching) class to use.
@@ -220,6 +221,41 @@ multi sub MAIN('show', Str :$store = $default-store) is export {
         else {
             say "  Not run";
         }
+    }
+}
+
+#| Run a tool for a service.
+multi sub MAIN('tool', Str $service-name, Str $tool-name, *@extra-args, Str :$store = $default-store) {
+    ensure-stores-available();
+    with @services.first(*.name eq $service-name) -> Service $service {
+        my $tool = $service.spec.tools.first(*.name eq $tool-name);
+        if $tool ~~ Dev::ContainerizedService::Tool {
+            my $settings-file = settings-file($store, $service.name);
+            if $settings-file.e {
+                $service.spec.store-prefix = store-prefix($store, $service.name);
+                $service.spec.load(from-json $settings-file.slurp);
+                my $tool-instance = $tool.new:
+                        image => $service.image,
+                        store-prefix => $service.spec.store-prefix,
+                        service-data => $service.spec.service-data;
+                $tool-instance.run(@extra-args);
+            }
+            else {
+                note "Service '$service-name' has not yet been run for store '$store'; tools unavailable";
+            }
+        }
+        elsif $service.spec.tools -> @tools {
+            note "No such tool '$tool-name'; available: @tools.map(*.name).join(', ')";
+            exit 1;
+        }
+        else {
+            note "There are no tools available for $service-name";
+            exit 1;
+        }
+    }
+    else {
+        note "No such service '$service-name'; available: @services.map(*.name).join(', ')";
+        exit 1;
     }
 }
 

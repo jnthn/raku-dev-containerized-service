@@ -16,7 +16,8 @@
     "Dev::ContainerizedService": "lib/Dev/ContainerizedService.rakumod",
     "Dev::ContainerizedService::Spec": "lib/Dev/ContainerizedService/Spec.rakumod",
     "Dev::ContainerizedService::Spec::Postgres": "lib/Dev/ContainerizedService/Spec/Postgres.rakumod",
-    "Dev::ContainerizedService::Spec::Redis": "lib/Dev/ContainerizedService/Spec/Redis.rakumod"
+    "Dev::ContainerizedService::Spec::Redis": "lib/Dev/ContainerizedService/Spec/Redis.rakumod",
+    "Dev::ContainerizedService::Tool": "lib/Dev/ContainerizedService/Tool.rakumod"
   },
   "resources": [],
   "license": "Artistic-2.0",
