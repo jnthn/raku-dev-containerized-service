@@ -9,7 +9,7 @@ if $redis ~~ Failure {
 }
 else {
     my $test-dev-script = $*PROGRAM.parent.add('test-data/dev-redis.raku');
-    my @args = $*EXECUTABLE, '-I.', $test-dev-script, $*EXECUTABLE, '-e', q:to/RAKU/;
+    my @args = $*EXECUTABLE, '-I.', $test-dev-script, 'run', $*EXECUTABLE, '-e', q:to/RAKU/;
         use Redis;
         say 'TEST RESULT: Started';
         say %*ENV<REDIS_HOST>:exists

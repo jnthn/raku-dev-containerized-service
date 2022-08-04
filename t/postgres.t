@@ -9,7 +9,7 @@ if $pg ~~ Failure {
 }
 else {
     my $test-dev-script = $*PROGRAM.parent.add('test-data/dev-postgres.raku');
-    my @args = $*EXECUTABLE, '-I.', $test-dev-script, $*EXECUTABLE, '-e', q:to/RAKU/;
+    my @args = $*EXECUTABLE, '-I.', $test-dev-script, 'run', $*EXECUTABLE, '-e', q:to/RAKU/;
         use DB::Pg;
         say 'TEST RESULT: Started';
         say %*ENV<DB_CONN_STRING>:exists

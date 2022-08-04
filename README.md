@@ -37,7 +37,7 @@ service, specifies an environment variable to be set.
 We can then (assuming `chmod +x devenv.raku`) use the script as follows:
 
 ```
-./devenv.raku raku -Ilib service.raku 
+./devenv.raku run raku -Ilib service.raku
 ```
 
 This will:
@@ -50,7 +50,7 @@ This will:
 If using the `cro` development tool, one could do:
 
 ```
-./devenv.raku cro run 
+./devenv.raku run cro run
 ```
 
 ### Additional Actions

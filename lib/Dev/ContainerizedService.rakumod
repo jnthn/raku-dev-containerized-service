@@ -56,7 +56,7 @@ sub env(Str $name, Str() $value --> Nil) is export {
 }
 
 #| Exported entrypoint used in order to run the specified script with the setup work performed.
-multi sub MAIN(|) is export {
+multi sub MAIN('run', *@command) is export {
     # Make sure we've completed pulling all services; if we have any errors, stop.
     await Promise.allof(@services.map(*.pull-promise));
     with @services.first(*.pull-promise.status == Broken) {
@@ -117,7 +117,7 @@ multi sub MAIN(|) is export {
 
             # Arguments given to us include the program name to run. Thus feed them directly into the
             # Proc::Async constructor, which uses the first as the program name.
-            my $proc = Proc::Async.new(@*ARGS);
+            my $proc = Proc::Async.new(@command);
             whenever $proc.start(:%ENV) {
                 stop-services();
                 exit .exitcode;
