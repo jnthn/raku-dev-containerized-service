@@ -147,13 +147,13 @@ To see the created stores, use:
 To show the produced service configuration for a particular store, use:
 
 ```raku
-./devenv.raku show bug42
+./devenv.raku --store=bug42 show
 ```
 
 To delete a particular store, rather than the default one, use:
 
 ```raku
-./devenv.raku delete bug42
+./devenv.raku --store=bug42 delete
 ```
 
 ### Multiple instances of a given service

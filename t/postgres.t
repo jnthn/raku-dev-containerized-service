@@ -121,7 +121,7 @@ else {
 
     subtest 'Can use a non-default store' => {
         my $test-dev-script = $*PROGRAM.parent.add('test-data/dev-postgres-project.raku');
-        try run $*EXECUTABLE, '-I.', $test-dev-script, 'delete', 'other'; # Clean up in case of previous failure
+        try run $*EXECUTABLE, '-I.', $test-dev-script, '--store=other', 'delete'; # Clean up in case of previous failure
         my @args = $*EXECUTABLE, '-I.', $test-dev-script, '--store=other', 'run', $*EXECUTABLE, '-e', q:to/RAKU/;
             use DB::Pg;
             say 'TEST RESULT: Started';
@@ -182,7 +182,7 @@ else {
 
     subtest 'Deleting a store works' => {
         my $test-dev-script = $*PROGRAM.parent.add('test-data/dev-postgres-project.raku');
-        lives-ok { run $*EXECUTABLE, '-I.', $test-dev-script, 'delete', 'other' },
+        lives-ok { run $*EXECUTABLE, '-I.', $test-dev-script, '--store=other', 'delete' },
             'Can delete a store';
         my @args = $*EXECUTABLE, '-I.', $test-dev-script, '--store=other', 'run', $*EXECUTABLE, '-e', q:to/RAKU/;
             use DB::Pg;
@@ -198,7 +198,7 @@ else {
         is @filtered-output[0], 'TEST RESULT: Started', 'Launched process was started';
         is @filtered-output[1], 'TEST RESULT: Connected', 'Launched process could connect';
         is @filtered-output[2], 'TEST RESULT: Inserted failed', 'Insert failed as table is gone';
-        lives-ok { run $*EXECUTABLE, '-I.', $test-dev-script, 'delete', 'other' },
+        lives-ok { run $*EXECUTABLE, '-I.', $test-dev-script, '--store=other', 'delete' },
                 'Can delete a store again';
         lives-ok { run $*EXECUTABLE, '-I.', $test-dev-script, 'delete' },
                 'Can delete main store again';

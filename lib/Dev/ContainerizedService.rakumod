@@ -205,7 +205,7 @@ multi sub MAIN('stores') is export {
 
 #| Display the service data of the currently running or most recently run services,
 #| optionally specifying the store name.
-multi sub MAIN('show', Str $store = $default-store) is export {
+multi sub MAIN('show', Str :$store = $default-store) is export {
     ensure-stores-available();
     for @services -> Service $service {
         say $service.name;
@@ -224,7 +224,7 @@ multi sub MAIN('show', Str $store = $default-store) is export {
 }
 
 #| Delete a store for this development environment script.
-multi sub MAIN('delete', Str $store = $default-store) {
+multi sub MAIN('delete', Str :$store = $default-store) {
     ensure-stores-available();
     for @services -> Service $service {
         my $settings-file = settings-file($store, $service.name);
