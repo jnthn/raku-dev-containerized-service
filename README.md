@@ -62,6 +62,116 @@ example, one could run database migrations (in the case where it's desired to
 have them explicitly applied to production, rather than having them applied at
 application startup time).
 
+### Retaining data
+
+By default, any created databases are not persisted once the `run` command is
+completed. To change this, alter the configuration file to specify a project name
+(the name of your application) and call `store`:
+
+```raku
+#!/usr/bin/env raku
+use Dev::ContainerizedService;
+
+project 'my-app';
+store;
+
+service 'postgres', :tag<13.0>, -> (:$conninfo, *%) {
+    env 'DB_CONN_INFO', $conninfo;
+}
+```
+
+Now when using `./devenv.raku run ...`, for services that support it, Docker
+volume(s) will be created and the generated password(s) for services will be
+saved (in your home directory). These will be reused on subsequent runs.
+
+To clean up this storage, use:
+
+```raku
+./devenv.raku delete
+```
+
+Which will remove any created volumes along with saved settings.
+
+### Showing produced configuration
+
+When using storage, it is also possible to see the most recently passed service
+settings for each service by using:
+
+```raku
+./devenv.raku show
+```
+
+The output looks like this:
+
+```raku
+postgres
+  conninfo: host=localhost port=29249 user=test password=xxlkC2MrOv4yJ3vP1V-pVI7 dbname=test
+  dbname: test
+  host: localhost
+  password: xxlkC2MrOv4yJ3vP1V-pVI7
+  port: 29249
+  user: test
+```
+
+When used while `run` is active, this is handy for obtaining connection string
+information in order to connect to the database using tools of your choice.
+
+### Multiple stores
+
+Calling:
+
+```raku
+store;
+```
+
+Is equivalent to calling:
+
+```raku
+store 'default';
+```
+
+That is, it specifies the name of a default store. It is possible to have multiple
+independent stores instead, by using the `--store` argument before the `run`
+subcommand:
+
+```raku
+./devenv.raku --store=bug42 run cro run
+```
+
+To see the created stores, use:
+
+```raku
+./devenv.raku stores
+```
+
+To show the produced service configuration for a particular store, use:
+
+```raku
+./devenv.raku show bug42
+```
+
+To delete a particular store, rather than the default one, use:
+
+```raku
+./devenv.raku delete bug42
+```
+
+### Multiple instances of a given service
+
+One can have multiple instances of a given service. When doing this, it is wise
+to assign them names (otherwise names like `postgres-2` will be generated, and
+this will not be too informative in `show` output):
+
+```raku
+service 'postgres', :tag<13.0>, :name<pg-products> -> (:$conninfo, *%) {
+    env 'PRODUCT_DB_CONN_INFO', $conninfo;
+}
+
+service 'postgres', :tag<13.0>, :name<pg-billing> -> (:$conninfo, *%) {
+    env 'BILLING_DB_CONN_INFO', $conninfo;
+}
+```
+
 ### Is this magic?
 
 Not really; the `Dev::ContainerizedService` module exports a `MAIN` sub, which is
@@ -91,6 +201,8 @@ service 'postgres', :tag<13.0>, -> (:$host, :$port, :$user, :$password, :$dbname
 }
 ```
 
+Postgres supports storage of the database between runs when `store` is used.
+
 ### Redis
 
 Obtain the host and port of the started instance:
@@ -101,6 +213,8 @@ service 'redis', :tag<7.0>, -> (:$host, :$port) {
     env 'REDIS_PORT', $port;
 }
 ```
+
+Redis is currently always in-memory and will never be stored.
 
 ## The service I want isn't here!
 

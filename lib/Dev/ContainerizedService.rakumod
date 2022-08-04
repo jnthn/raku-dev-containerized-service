@@ -1,5 +1,6 @@
 use v6.d;
 use Dev::ContainerizedService::Spec;
+use JSON::Fast;
 
 # Mapping of service names to the module name to require and (matching) class to use.
 my constant %specs =
@@ -8,6 +9,7 @@ my constant %specs =
 
 #| Details of a specified service.
 my class Service {
+    has Str $.name is required;
     has Str $.service-id is required;
     has Str $.image is required;
     has Dev::ContainerizedService::Spec $.spec is required;
@@ -25,16 +27,63 @@ my class Service {
     }
 }
 
+# Declared project name, if any.
+my Str $project;
+
+# Declared default storage key, if any.
+my Str $default-store;
+
 # Declared services.
 my Service @services;
 
+#| Declare a project name for the development configuration. This is required if
+#| wanting to have persistent storage of the created services between runs.
+sub project(Str $name --> Nil) is export {
+    with $project {
+        note "Already called `project` function; it can only be used once";
+        exit 1;
+    }
+    else {
+        $project = $name;
+    }
+}
+
+#| Declare that we should store the service state that is produced (for example, by
+#| having the data be on a persistent docker). Optionally provide a name for the
+#| default store.
+sub store(Str $name = 'default' --> Nil) is export {
+    without $project {
+        note "Must call the `project` function before using `store`";
+        exit 1;
+    }
+    with $default-store {
+        note "Already called `store` function; it can only be used once";
+        exit 1;
+    }
+    else {
+        $default-store = $name;
+    }
+}
+
 #| Declare that a given development service is needed. The body block is run once the
-#| service has been started, and can do any desired setup work. It can also specify
-#| environment variables that will be passed to the process being launched under the
-#| development service.
-sub service(Str $service-id, &setup, Str :$tag, *%options) is export {
-    # Resolve the service spec and instantiate.
+#| service has been started, and can do any desired setup work or specify environment
+#| variables to pass to the process that is run. A tag (for the container of the
+#| service) can be specified, and the service can be given an explicit name (only
+#| really important if one wishes to bring up, for example, two different Postgres
+#| instances and have a clear way to refer to each one).
+sub service(Str $service-id, &setup, Str :$tag, Str :$name, *%options) is export {
+    # Resolve the service spec.
     my $spec-class = get-spec($service-id);
+
+    # Figure out a name.
+    my $base-name = $name // $service-id;
+    my $chosen-name = $base-name;
+    my $idx = 2;
+    while @services.first(*.name eq $chosen-name) {
+        $chosen-name = $base-name ~ '-' ~ $idx++;
+    }
+
+    # Instantiate the container specification.
     my Dev::ContainerizedService::Spec $spec = $spec-class.new(|%options);
 
     # Start pulling the container.
@@ -42,7 +91,7 @@ sub service(Str $service-id, &setup, Str :$tag, *%options) is export {
     my $pull-promise = start sink docker-pull-image($image);
 
     # Add service info to collected services.
-    push @services, Service.new(:$service-id, :$image, :$spec, :$pull-promise, :&setup);
+    push @services, Service.new(:name($chosen-name), :$service-id, :$image, :$spec, :$pull-promise, :&setup);
 }
 
 #| Declare an environment variable be supplied to the process that is started.
@@ -55,13 +104,24 @@ sub env(Str $name, Str() $value --> Nil) is export {
     }
 }
 
-#| Exported entrypoint used in order to run the specified script with the setup work performed.
-multi sub MAIN('run', *@command) is export {
+#| Run a command in the containerized development environment.
+multi sub MAIN('run', Str :$store = $default-store, *@command) is export {
     # Make sure we've completed pulling all services; if we have any errors, stop.
     await Promise.allof(@services.map(*.pull-promise));
     with @services.first(*.pull-promise.status == Broken) {
         note "Failed to pull container for service '{.service-id}':\n{.pull-promise.cause.message.indent(4)}";
         exit 1;
+    }
+
+    # If we have storage, then set the storage prefix and load any persisted settings.
+    if $store {
+        for @services -> Service $service {
+            $service.spec.store-prefix = store-prefix($store, $service.name);
+            my $settings-file = settings-file($store, $service.name());
+            if $settings-file.e {
+                $service.spec.load(from-json $settings-file.slurp);
+            }
+        }
     }
 
     react {
@@ -94,6 +154,10 @@ multi sub MAIN('run', *@command) is export {
                 # Otherwise, wait for the service to be determined ready.
                 whenever $service.spec.ready(:$name) {
                     $service.run-setup();
+                    if $store {
+                        my $settings-file = settings-file($store, $service.name);
+                        $settings-file.spurt: to-json $service.spec.save;
+                    }
                     $started.keep;
                     CATCH {
                         default {
@@ -131,6 +195,77 @@ multi sub MAIN('run', *@command) is export {
             }
         }
     }
+}
+
+#| List stores for the project specified by this development environment script.
+multi sub MAIN('stores') is export {
+    ensure-stores-available();
+    .say for project-dir().dir.grep(*.d).map(*.basename).sort;
+}
+
+#| Display the service data of the currently running or most recently run services,
+#| optionally specifying the store name.
+multi sub MAIN('show', Str $store = $default-store) is export {
+    ensure-stores-available();
+    for @services -> Service $service {
+        say $service.name;
+        my $settings-file = settings-file($store, $service.name);
+        if $settings-file.e {
+            $service.spec.store-prefix = store-prefix($store, $service.name);
+            $service.spec.load(from-json $settings-file.slurp);
+            for $service.spec.service-data.sort(*.key) {
+                say "  {.key}: {.value}";
+            }
+        }
+        else {
+            say "  Not run";
+        }
+    }
+}
+
+#| Delete a store for this development environment script.
+multi sub MAIN('delete', Str $store = $default-store) {
+    ensure-stores-available();
+    for @services -> Service $service {
+        my $settings-file = settings-file($store, $service.name);
+        if $settings-file.e {
+            $service.spec.store-prefix = store-prefix($store, $service.name);
+            $service.spec.load(from-json $settings-file.slurp);
+            $service.spec.cleanup();
+            $settings-file.unlink;
+        }
+    }
+}
+
+sub ensure-stores-available(--> Nil) {
+    without $project {
+        note "This development environment script does not call `project`, so cannot use stores";
+        exit 1;
+    }
+    without $default-store {
+        note "This development environment script does not call `store`, so cannot use stores";
+        exit 1;
+    }
+}
+
+sub project-dir(--> IO::Path) {
+    my $dir = $*HOME.add('.raku-dev-cs').add($project);
+    $dir.mkdir unless $dir.d;
+    return $dir
+}
+
+sub store-dir(Str $store --> IO::Path) {
+    my $dir = project-dir.add($store);
+    $dir.mkdir unless $dir.d;
+    return $dir;
+}
+
+sub settings-file(Str $store, Str $service --> IO::Path) {
+    store-dir($store).add($service)
+}
+
+sub store-prefix(Str $store, Str $service-name --> Str) {
+    "$project-$store-$service-name-"
 }
 
 #| Look up the specification for a service of the given ID. Dies if it cannot be

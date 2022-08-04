@@ -3,19 +3,34 @@ use Dev::ContainerizedService::Spec;
 
 #| Development service specification for Postgres.
 class Dev::ContainerizedService::Spec::Postgres does Dev::ContainerizedService::Spec {
-    has Int $!port = self.generate-port;
-    has Str $!password = self.generate-secret;
+    has Int $!port;
+    has Str $!password;
 
     method docker-container(--> Str) { 'postgres' }
 
     method default-docker-tag(--> Str) { 'latest' }
 
+    method save(--> Map) { { :$!password, :$!port } }
+
+    method load(%saved --> Nil) {
+        $!port = $_ with %saved<port>;
+        $!password = $_ with %saved<password>;
+    }
+
+    method cleanup(--> Nil) {
+        self.delete-volume("{$!store-prefix}data")
+    }
+
     method docker-options(--> Positional) {
+        # Re-use password over runs, but produce a new port.
+        $!password //= self.generate-secret;
+        $!port = self.generate-port;
         [
             '-e', "POSTGRES_PASSWORD=$!password",
             '-e', 'POSTGRES_USER=test',
             '-e', 'POSTGRES_DB=test',
-            '-p', "$!port:5432"
+            '-p', "$!port:5432",
+            |($!store-prefix ?? ('--mount', "type=volume,src={$!store-prefix}data,dst=/var/lib/postgresql/data") !! ())
         ]
     }
 

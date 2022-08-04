@@ -7,7 +7,9 @@
     "Jonathan Worthington <jnthn@jnthn.net>"
   ],
   "auth": "zef:jnthn",
-  "depends": [],
+  "depends": [
+    "JSON::Fast"
+  ],
   "build-depends": [],
   "test-depends": [],
   "provides": {

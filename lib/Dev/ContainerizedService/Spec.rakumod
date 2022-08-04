@@ -7,11 +7,32 @@ use v6.d;
 #| (for example, generated ports or throw-away passwords) that should be used
 #| later when producing the service options.
 role Dev::ContainerizedService::Spec {
+    #| A store prefix. Set before docker-options is called in the event that the
+    #| container's state should be stored. If not set, then it should be assumed
+    #| that a throwaway container is needed. Should be used as part of a volume
+    #| name in order to make the service state persistent.
+    has Str $.store-prefix is rw;
+
     #| Specify the docker container name.
     method docker-container(--> Str) { ... }
 
     #| The default docker tag.
     method default-docker-tag(--> Str) { ... }
+
+    #| Save details of the container specification that should persist in a
+    #| stored configuration. Typically this will be a generated password and,
+    #| potentially, a selected port number; a common pattern is to pick a new
+    #| port number each run (that is, in docker-options), and to save it for
+    #| being able to dump or use if running tools. Must return a hash that
+    #| can be serialized by JSON::Fast. Called after the service has been
+    #| successfully launched and deemed ready.
+    method save(--> Map) { {} }
+
+    #| Load saved configuration. Called before docker-options.
+    method load(%saved --> Nil) { }
+
+    #| Clean up any persistent storage, such as docker volumnes.
+    method cleanup(--> Nil) { }
 
     #| Options to pass to `docker`.
     method docker-options(--> Positional) { [] }
@@ -73,6 +94,18 @@ role Dev::ContainerizedService::Spec {
                     last;
                 }
                 await $delay;
+            }
+        }
+    }
+
+    #| Deletes the specified Docker volume, if it exists.
+    method delete-volume(Str $volume --> Nil) {
+        react {
+            my $proc = Proc::Async.new('docker', 'volume', 'rm', $volume);
+            $proc.stdout.tap;
+            $proc.stderr.tap;
+            whenever $proc.start {
+                done;
             }
         }
     }
