@@ -16,6 +16,7 @@
   "provides": {
     "Dev::ContainerizedService": "lib/Dev/ContainerizedService.rakumod",
     "Dev::ContainerizedService::Spec": "lib/Dev/ContainerizedService/Spec.rakumod",
+    "Dev::ContainerizedService::Spec::ClickHouse": "lib/Dev/ContainerizedService/Spec/ClickHouse.rakumod",
     "Dev::ContainerizedService::Spec::Postgres": "lib/Dev/ContainerizedService/Spec/Postgres.rakumod",
     "Dev::ContainerizedService::Spec::Redis": "lib/Dev/ContainerizedService/Spec/Redis.rakumod",
     "Dev::ContainerizedService::Tool": "lib/Dev/ContainerizedService/Tool.rakumod"

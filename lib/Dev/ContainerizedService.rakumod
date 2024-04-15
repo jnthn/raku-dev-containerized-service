@@ -6,7 +6,8 @@ use JSON::Fast;
 # Mapping of service names to the module name to require and (matching) class to use.
 my constant %specs =
         'postgres' => 'Dev::ContainerizedService::Spec::Postgres',
-        'redis' => 'Dev::ContainerizedService::Spec::Redis';
+        'redis' => 'Dev::ContainerizedService::Spec::Redis',
+        'clickhouse' => 'Dev::ContainerizedService::Spec::ClickHouse';
 
 #| Details of a specified service.
 my class Service {
