@@ -1,7 +1,7 @@
 {
   "name": "Dev::ContainerizedService",
   "description": "Uses containers to provide services (such as databases) to ease getting a local development environment set up.",
-  "version": "0.3",
+  "version": "0.3.1",
   "perl": "6.*",
   "authors": [
     "Jonathan Worthington <jnthn@jnthn.net>"

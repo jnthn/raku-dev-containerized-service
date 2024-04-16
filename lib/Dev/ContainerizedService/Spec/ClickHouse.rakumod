@@ -2,6 +2,15 @@ use v6.d;
 
 use Dev::ContainerizedService::Spec;
 
+my constant $CONFIG = q:to/CONFIG/;
+    <clickhouse>
+        <logger>
+            <console>1</console>
+            <level>error</level>
+        </logger>
+    </clickhouse>
+    CONFIG
+
 class Dev::ContainerizedService::Spec::ClickHouse does Dev::ContainerizedService::Spec {
     has Int $!port;
     has Str $!password;
@@ -28,6 +37,11 @@ class Dev::ContainerizedService::Spec::ClickHouse does Dev::ContainerizedService
     }
 
     method docker-options(--> Positional) {
+        # Ensure we have configuration that quietens noisy output to only
+        # errors written to a file.
+        my $config-path = $*SPEC.tmpdir.add('dev-containerized-clickhouse-config.xml');
+        spurt $config-path, $CONFIG;
+
         # Re-use password over runs, but produce a new port.
         $!password //= self.generate-secret;
         $!port = self.generate-port;
@@ -37,6 +51,7 @@ class Dev::ContainerizedService::Spec::ClickHouse does Dev::ContainerizedService
             '-e', "CLICKHOUSE_PASSWORD=$!password",
             '-p', "$!port:8123",
             '--ulimit', 'nofile=262144:262144',
+            '-v', "{$config-path.Str}:/etc/clickhouse-server/config.d/logging.xml",
             |($!store-prefix ?? ('--mount', "type=volume,src={ $!store-prefix }data,dst=/var/lib/clickhouse") !! ())
         ]
     }
