@@ -43,6 +43,7 @@ class Dev::ContainerizedService::Spec::Postgres does Dev::ContainerizedService::
             '-e', "POSTGRES_PASSWORD=$!password",
             '-e', 'POSTGRES_USER=test',
             '-e', 'POSTGRES_DB=test',
+            '-e', 'POSTGRES_INITDB_ARGS=--no-instructions',
             '-p', "$!port:5432",
             |($!store-prefix ?? ('--mount', "type=volume,src={$!store-prefix}data,dst=/var/lib/postgresql/data") !! ())
         ]
