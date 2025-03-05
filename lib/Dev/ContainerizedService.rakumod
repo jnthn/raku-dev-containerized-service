@@ -73,7 +73,7 @@ sub store(Str $name = 'default' --> Nil) is export {
 #| service) can be specified, and the service can be given an explicit name (only
 #| really important if one wishes to bring up, for example, two different Postgres
 #| instances and have a clear way to refer to each one).
-sub service(Str $service-id, &setup, Str :$tag, Str :$name, *%options) is export {
+sub service(Str $service-id, &setup, Str :$image-name, Str :$tag, Str :$name, *%options) is export {
     # Resolve the service spec.
     my $spec-class = get-spec($service-id);
 
@@ -89,7 +89,7 @@ sub service(Str $service-id, &setup, Str :$tag, Str :$name, *%options) is export
     my Dev::ContainerizedService::Spec $spec = $spec-class.new(|%options);
 
     # Start pulling the container.
-    my $image = $spec.docker-container ~ ":" ~ ($tag // $spec.default-docker-tag);
+    my $image = ($image-name // $spec.docker-container) ~ ":" ~ ($tag // $spec.default-docker-tag);
     my $pull-promise = start sink docker-pull-image($image);
 
     # Add service info to collected services.
