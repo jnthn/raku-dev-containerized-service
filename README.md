@@ -199,6 +199,18 @@ These names are used in the `tool` subcommand:
 ./devenv.raku -tool pg-billing client
 ```
 
+### Custom images
+
+Sometimes you might not want to use the default docker images for a service; for
+exmaple, if doing Postgres with pgvector you might need an image with that
+extension installed instead. In that case, pass in `image-name`:
+
+```
+service 'postgres', :image-name<pgvector/pgvector>, :tag<0.8.0-pg17>, -> (:$conninfo, :$host, :$port, :$user, :$password, :$dbname) {
+    ...
+}
+```
+
 ### Is this magic?
 
 Not really; the `Dev::ContainerizedService` module exports a `MAIN` sub, which is
