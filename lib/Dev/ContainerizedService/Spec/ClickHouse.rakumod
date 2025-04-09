@@ -8,6 +8,22 @@ my constant $CONFIG = q:to/CONFIG/;
             <console>1</console>
             <level>error</level>
         </logger>
+
+        <asynchronous_metric_log remove="1"/>
+        <backup_log remove="1"/>
+        <error_log remove="1"/>
+        <metric_log remove="1"/>
+        <query_thread_log remove="1" />  
+        <query_log remove="1" />
+        <query_views_log remove="1" />
+        <part_log remove="1"/>
+        <session_log remove="1"/>
+        <text_log remove="1" />
+        <trace_log remove="1"/>
+        <crash_log remove="1"/>
+        <opentelemetry_span_log remove="1"/>
+        <zookeeper_log remove="1"/>
+        <processors_profile_log remove="1"/>
     </clickhouse>
     CONFIG
 
